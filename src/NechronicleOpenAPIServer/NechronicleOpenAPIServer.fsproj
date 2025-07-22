@@ -10,18 +10,21 @@
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="FSharp.Data" Version="6.6.0" />
-        <PackageReference Include="FsRandom" Version="1.4.0.1" />
+        <PackageReference Include="FSharp.Data.Json.Core" Version="6.6.0" />
         <PackageReference Include="Giraffe" Version="6.4.0"/>
         <PackageReference Include="Giraffe.ViewEngine" Version="1.4.*"/>
     </ItemGroup>
     <ItemGroup>
+        <Compile Include="Utilities.fs" />
         <Compile Include="DomainTypes.fs" />
         <Compile Include="AppUser.fs" />
-        <Compile Include="Fighter.fs" />
         <Compile Include="PublicID.fs" />
         <Compile Include="Repository.fs" />
-        <Compile Include="AppLogic.fs" />
-        <Compile Include="EndpointHandlers.fs" />
+        <Compile Include="CommonOperationTypes.fs" />
+        <Compile Include="AppUserOperations.fs" />
+        <Compile Include="FighterOperations.fs" />
+        <Compile Include="AppUserEndpointHandlers.fs" />
+        <Compile Include="FighterEndpointHandlers.fs" />
         <Compile Include="Program.fs"/>
     </ItemGroup>
     <ItemGroup>

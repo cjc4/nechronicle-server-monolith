@@ -1,9 +1,7 @@
 module NechronicleOpenAPIServer.App
 
-// First party dependencies
-open EndpointHandlers
-
-// Third party dependencies
+open AppUserEndpointHandlers
+open FighterEndpointHandlers
 open System
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Cors.Infrastructure
@@ -21,11 +19,14 @@ open Giraffe.EndpointRouting
 let endpoints =
     [
         GET [
-            route "/users" listUser
-            routef "/factions/%s/units" listFighter
+            route "/users" HandleListUser
+            routef "/factions/%s/units" HandleListFighter
+        ]
+        PATCH [
+            routef "/factions/%s/units/%s" HandleUpdateFighter
         ]
         POST [
-            routef "/factions/%s/units" createFighter
+            routef "/factions/%s/units" HandleCreateFighter
         ]
     ]
 
