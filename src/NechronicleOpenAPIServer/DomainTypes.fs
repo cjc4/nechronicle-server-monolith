@@ -95,6 +95,14 @@ module DomainTypes =
             Attributes : Attributes
         }
 
+    type FighterView =
+        {
+            ID : FighterID option
+            FactionID : FactionID option
+            Name : string option
+            Attributes : Attributes option
+        }
+
     type CreatableFighter =
         {
             FactionID : FactionID

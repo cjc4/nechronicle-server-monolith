@@ -50,6 +50,13 @@ let defaultDirtyValues =
         Username = None
     }
 
+type FilterField =
+    {
+        Field : string
+        Operator : string
+        Value : string
+    }
+
 type Operation =
     | List
     | Create

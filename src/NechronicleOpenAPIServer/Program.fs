@@ -1,7 +1,7 @@
 module NechronicleOpenAPIServer.App
 
 open AppUserEndpointHandlers
-open FighterEndpointHandlers
+open FactionEndpointHandlers
 open System
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Cors.Infrastructure
@@ -11,6 +11,7 @@ open Microsoft.Extensions.Logging
 open Microsoft.Extensions.DependencyInjection
 open Giraffe
 open Giraffe.EndpointRouting
+open System.Text.Json.Serialization
 
 // ---------------------------------
 // Routing to endpoint handlers
@@ -18,15 +19,35 @@ open Giraffe.EndpointRouting
 
 let endpoints =
     [
-        GET [
-            route "/users" HandleListUser
-            routef "/factions/%s/units" HandleListFighter
-        ]
-        PATCH [
-            routef "/factions/%s/units/%s" HandleUpdateFighter
-        ]
-        POST [
-            routef "/factions/%s/units" HandleCreateFighter
+        subRoute "/v1" [
+            subRoute "/campaigns" [
+                GET [
+                    // route "/" HandleListCampaign
+                ]
+            ]
+            subRoute "/factions" [
+                DELETE [
+                    routef "/%s/units/%s" HandleDeleteFighter
+                ]
+                GET [
+                    // route "/" HandleListFaction
+                    // routef "/%s" HandleRetrieveFactionById
+                    routef "/%s/units" HandleListFighter
+                    routef "/%s/units/%s" HandleRetrieveFighterById
+                ]
+                PATCH [
+                    routef "/%s/units/%s" HandleUpdateFighter
+                ]
+                POST [
+                    routef "/%s/units" HandleCreateFighter
+                ]
+            ]
+            subRoute "/users" [
+                GET [
+                    route "/" HandleListUser
+                    // routef "/%s" HandleRetrieveUserById
+                ]
+            ]
         ]
     ]
 
@@ -67,6 +88,10 @@ let configureApp (app : IApplicationBuilder) =
 let configureServices (services : IServiceCollection) =
     services.AddCors()    |> ignore
     services.AddGiraffe() |> ignore
+    let jsonOptions =
+        JsonFSharpOptions.Default()
+            // .Add customizations here...
+    services.AddSingleton<Json.ISerializer>(Json.FsharpFriendlySerializer(jsonOptions)) |> ignore
 
 let configureLogging (builder : ILoggingBuilder) =
     builder.AddConsole()
