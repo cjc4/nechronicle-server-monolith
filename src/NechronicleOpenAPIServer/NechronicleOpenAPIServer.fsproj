@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk.Web">
     <PropertyGroup>
         <AssemblyName>NechronicleOpenAPIServer</AssemblyName>
@@ -13,13 +13,13 @@
         <PackageReference Include="FSharp.Data.Json.Core" Version="6.6.0" />
         <PackageReference Include="FSharp.SystemTextJson" Version="1.4.36" />
         <PackageReference Include="Giraffe" Version="7.0.2" />
-        <PackageReference Include="Giraffe.ViewEngine" Version="1.4.*"/>
+        <PackageReference Include="Giraffe.ViewEngine" Version="1.4.*" />
         <PackageReference Include="Npgsql" Version="9.0.3" />
     </ItemGroup>
     <ItemGroup>
         <Compile Include="Utilities.fs" />
         <Compile Include="DomainTypes.fs" />
-        <Compile Include="AppUser.fs" />
+        
         <Compile Include="PublicID.fs" />
         <Compile Include="CommonRepositoryTypes.fs" />
         <Compile Include="AppUserRepository.fs" />
@@ -30,10 +30,10 @@
         <Compile Include="FactionOperations.fs" />
         <Compile Include="AppUserEndpointHandlers.fs" />
         <Compile Include="FactionEndpointHandlers.fs" />
-        <Compile Include="Program.fs"/>
+        <Compile Include="Program.fs" />
     </ItemGroup>
     <ItemGroup>
-        <None Include="web.config" CopyToOutputDirectory="PreserveNewest"/>
+        <None Include="web.config" CopyToOutputDirectory="PreserveNewest" />
         <Content Include="WebRoot\**\*">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </Content>

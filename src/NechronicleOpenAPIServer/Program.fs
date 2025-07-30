@@ -19,34 +19,32 @@ open System.Text.Json.Serialization
 
 let endpoints =
     [
-        subRoute "/v1" [
-            subRoute "/campaigns" [
-                GET [
-                    // route "/" HandleListCampaign
-                ]
+        // subRoute "/campaigns" [
+        //     GET [
+        //         // route "/" HandleListCampaign
+        //     ]
+        // ]
+        subRoute "/factions" [
+            DELETE [
+                routef "/%s/units/%s" HandleDeleteFighter
             ]
-            subRoute "/factions" [
-                DELETE [
-                    routef "/%s/units/%s" HandleDeleteFighter
-                ]
-                GET [
-                    // route "/" HandleListFaction
-                    // routef "/%s" HandleRetrieveFactionById
-                    routef "/%s/units" HandleListFighter
-                    routef "/%s/units/%s" HandleRetrieveFighterById
-                ]
-                PATCH [
-                    routef "/%s/units/%s" HandleUpdateFighter
-                ]
-                POST [
-                    routef "/%s/units" HandleCreateFighter
-                ]
+            GET [
+                // route "/" HandleListFaction
+                // routef "/%s" HandleRetrieveFactionById
+                routef "/%s/units" HandleListFighter
+                routef "/%s/units/%s" HandleRetrieveFighterById
             ]
-            subRoute "/users" [
-                GET [
-                    route "/" HandleListUser
-                    // routef "/%s" HandleRetrieveUserById
-                ]
+            PATCH [
+                routef "/%s/units/%s" HandleUpdateFighter
+            ]
+            POST [
+                routef "/%s/units" HandleCreateFighter
+            ]
+        ]
+        subRoute "/users" [
+            GET [
+                route "/" HandleListUser
+                // routef "/%s" HandleRetrieveUserById
             ]
         ]
     ]
@@ -90,7 +88,8 @@ let configureServices (services : IServiceCollection) =
     services.AddGiraffe() |> ignore
     let jsonOptions =
         JsonFSharpOptions.Default()
-            // .Add customizations here...
+            .WithUnionUntagged()
+            .WithSkippableOptionFields()
     services.AddSingleton<Json.ISerializer>(Json.FsharpFriendlySerializer(jsonOptions)) |> ignore
 
 let configureLogging (builder : ILoggingBuilder) =

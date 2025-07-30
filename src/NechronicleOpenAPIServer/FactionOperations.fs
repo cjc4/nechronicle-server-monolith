@@ -1,7 +1,7 @@
 module NechronicleOpenAPIServer.FactionOperations
 
 open CommonOperationTypes
-open FSharp.Data
+open System.Text.Json
 
 let defaultFighterFields =
     [
@@ -20,37 +20,45 @@ let listFighter ( request : RequestContext ) =
     match FactionRepository.listFighter(factionID, filterClauses, returnFields) with
     | Ok fighterList -> Ok fighterList
 
+let extractFighterValuesFromJSONBody ( body : JsonElement ) =
+    // TODO: figure out how to properly test for the existence of these JSON values with System.Text.Json
+    // TODO: figure out how to make this more efficient by iterating over the JSON once instead of searching
+    let name = body.GetProperty("name").ToString()
+    let attributes = body.GetProperty("attributes")
+    let bodyDirtyValues = 
+        {
+            defaultDirtyValues with
+                ResourceName = Some(name)
+                ResourceAttributes = Some(attributes)
+
+        }
+    bodyDirtyValues
+
 let extractFighterValuesFromRequest (request : RequestContext) =
     // Assumptions: this function will be called with PathParameters
     let pathParameters = request.PathParameters.Value
-    let factionID = pathParameters.TryFind "factionID"
-    let fighterID = pathParameters.TryFind "fighterID"
+    let factionID = pathParameters.TryFind "FactionID"
+    let fighterID = pathParameters.TryFind "FighterID"
     let contentType =
         match request.RequestBody with
         | Some(requestBody) -> Some(requestBody.ContentType)
         | None -> None
-    let name =
-        match contentType with
-        | Some(JSON) ->
-            match request.RequestBody.Value.ParsedJson.Value.TryGetProperty "name" with
-            | Some(value) -> Some(value.AsString())
-            | None -> None
-        | None -> None
-    let attributes =
-        match contentType with
-        | Some(JSON) ->
-            match request.RequestBody.Value.ParsedJson.Value.TryGetProperty "attributes" with
-            | Some(value) -> Some(value)
-            | None -> None
-        | None -> None
     let dirtyValues =
-        {
-            defaultDirtyValues with
-                FighterID = fighterID
-                FactionID = factionID
-                ResourceName = name
-                ResourceAttributes = attributes
-        }
+        match contentType with
+        | Some(JSON) ->
+            let body = request.RequestBody.Value.ParsedJson.Value
+            let bodyDirtyValues = extractFighterValuesFromJSONBody body
+            {
+                bodyDirtyValues with
+                    FighterID = fighterID
+                    FactionID = factionID
+            }
+        | None ->
+            {
+                defaultDirtyValues with
+                    FighterID = fighterID
+                    FactionID = factionID
+            }
     let updatedRequest = { request with DirtyValues = Some(dirtyValues) }
     Ok updatedRequest
 
@@ -83,9 +91,7 @@ let createFighter (request : RequestContext) =
     let creatableFighter = request.UsableResource.Value.CreatableFighter.Value
     let returnFields = defaultFighterFields
     match FactionRepository.createFighter(creatableFighter) with
-    | Ok (fighterID, eTag) ->
-        let fighter = FactionRepository.retrieveFighterByID(fighterID, returnFields)
-        Ok (fighter, eTag)
+    | Ok (fighterID, eTag) -> FactionRepository.retrieveFighterByID(fighterID, returnFields)
 
 let makeUpdatableFighter (request: RequestContext) =
     // Assumptions: this function will be called with DirtyValues

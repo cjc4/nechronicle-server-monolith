@@ -9,7 +9,7 @@ open Microsoft.AspNetCore.Http
 let HandleListFighter factionID : HttpHandler =
     fun (next : HttpFunc) (ctx : HttpContext) ->
         let queryParameters = ctx.Request.Query
-        let pathParameters = Map.empty.Add("factionID", factionID)
+        let pathParameters = Map.empty.Add("FactionID", factionID)
         let request =
             {
                 defaultRequestContext with
@@ -25,7 +25,7 @@ let HandleListFighter factionID : HttpHandler =
 let HandleCreateFighter factionID : HttpHandler =
     fun (next : HttpFunc) (ctx : HttpContext) ->
         task {
-            let pathParameters = Map.empty.Add("factionID", factionID)
+            let pathParameters = Map.empty.Add("FactionID", factionID)
             let! body = ctx.ReadBodyFromRequestAsync()
             let requestBody = { defaultRequestBody with Body = body }
             let request =
@@ -42,7 +42,9 @@ let HandleCreateFighter factionID : HttpHandler =
                         >==> makeCreatableFighter
                         >==> createFighter
             match chain(request) with
-            | Ok fighter -> return! Successful.OK fighter next ctx
+            | Ok (fighterView, eTag) -> 
+                do ctx.SetHttpHeader("ETag", eTag)
+                return! Successful.OK fighterView next ctx
             | Error MalformedJson -> return! RequestErrors.BAD_REQUEST "Request body has malformed JSON" next ctx
             | Error FactionDoesNotExist -> return! RequestErrors.BAD_REQUEST "No faction with that ID exists" next ctx
             | Error NameNotProvided -> return! RequestErrors.BAD_REQUEST "A value for the name property is required" next ctx
@@ -53,8 +55,8 @@ let HandleRetrieveFighterById (factionID, fighterID) : HttpHandler =
     fun (next : HttpFunc) (ctx : HttpContext) ->
         let pathParameters =
                 Map.empty.
-                    Add("factionID", factionID).
-                    Add("fighterID", fighterID)
+                    Add("FactionID", factionID).
+                    Add("FighterID", fighterID)
         let request =
             {
                 defaultRequestContext with
@@ -62,8 +64,7 @@ let HandleRetrieveFighterById (factionID, fighterID) : HttpHandler =
                     Resource = Fighter
                     PathParameters = Some(pathParameters)
             }
-        let chain = parseRequestBody
-                    >==> extractFighterValuesFromRequest
+        let chain = extractFighterValuesFromRequest
                     >==> retrieveFighterById
         match chain(request) with
         | Ok (fighterView, eTag) ->
@@ -77,8 +78,9 @@ let HandleUpdateFighter (factionID , fighterID) : HttpHandler =
         task {
             let pathParameters =
                     Map.empty.
-                        Add("factionID", factionID).
-                        Add("fighterID", fighterID)
+                        Add("FactionID", factionID).
+                        Add("FighterID", fighterID)
+            // TODO: get query parameters, such as doReturnFighter and fields
             let! body = ctx.ReadBodyFromRequestAsync()
             let requestBody = { defaultRequestBody with Body = body }
             let request =
@@ -100,9 +102,9 @@ let HandleUpdateFighter (factionID , fighterID) : HttpHandler =
                 do ctx.SetHttpHeader("ETag", eTag)
                 return! Successful.NO_CONTENT next ctx
             // not implemented yet
-            //| Ok (fighter, eTag) ->
+            //| Ok (fighterView, eTag) ->
             //    do ctx.SetHttpHeader("ETag", eTag)
-            //    return! Successful.OK fighter next
+            //    return! Successful.OK fighterView next
             | Error MalformedJson -> return! RequestErrors.BAD_REQUEST "Request body has malformed JSON" next ctx
             | Error FactionDoesNotExist -> return! RequestErrors.BAD_REQUEST "No faction with that ID exists" next ctx
             | Error FighterDoesNotExist -> return! RequestErrors.NOT_FOUND "Fighter not found" next ctx
@@ -112,8 +114,8 @@ let HandleUpdateFighter (factionID , fighterID) : HttpHandler =
 let HandleDeleteFighter (factionID, fighterID) : HttpHandler =
     let pathParameters =
             Map.empty.
-                Add("factionID", factionID).
-                Add("fighterID", fighterID)
+                Add("FactionID", factionID).
+                Add("FighterID", fighterID)
     let request =
         {
             defaultRequestContext with
@@ -121,8 +123,7 @@ let HandleDeleteFighter (factionID, fighterID) : HttpHandler =
                 Resource = Fighter
                 PathParameters = Some(pathParameters)
         }
-    let chain = parseRequestBody
-                >==> extractFighterValuesFromRequest
+    let chain = extractFighterValuesFromRequest
                 >==> checkFactionExists
                 >==> checkFighterExists
                 >==> deleteFighter

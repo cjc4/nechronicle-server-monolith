@@ -1,19 +1,18 @@
 module NechronicleOpenAPIServer.CommonOperations
 
 open CommonOperationTypes
-open FSharp.Data
+open System.Text.Json
 
 let parseRequestBody (request : RequestContext) =
     // Assumptions: this function will be called with a RequestBody
     let contentType = request.RequestBody.Value.ContentType
     match contentType with
     | JSON ->
-        match JsonValue.TryParse(request.RequestBody.Value.Body) with
-        | Some(body) ->
-            let updatedReqBody = { request.RequestBody.Value with ParsedJson = Some(body) }
-            let updatedRequest = { request with RequestBody = Some(updatedReqBody) }
-            Ok updatedRequest
-        | None -> Error MalformedJson
+        // TODO: handle the possible exception thrown by System.Text.Json for invalid json
+        let root = JsonDocument.Parse(request.RequestBody.Value.Body).RootElement
+        let updatedRequestBody = { request.RequestBody.Value with ParsedJson = Some(root) }
+        let updatedRequest = { request with RequestBody = Some(updatedRequestBody) }
+        Ok updatedRequest
 
 let checkFactionExists (request : RequestContext) =
     // Assumptions: this function will be called with DirtyValues with a FactionID

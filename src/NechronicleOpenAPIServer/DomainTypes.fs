@@ -1,13 +1,13 @@
 namespace NechronicleOpenAPIServer
 
-open FSharp.Data
 open System
+open System.Text.Json
 
 [<AutoOpen>]
 module DomainTypes =
     // Domain properties.
     type AppUserUUID = AppUserUUID of Guid
-    type Attributes = Attributes of JsonValue
+    type Attributes = Attributes of JsonElement
     type CampaignID = CampaignID of string
     type CampaignEventID = CampaignEventID of string
     type CampaignEventType = CampaignEventType of string

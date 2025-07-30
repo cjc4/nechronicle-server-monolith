@@ -1,6 +1,6 @@
 module NechronicleOpenAPIServer.CommonOperationTypes
 
-open FSharp.Data
+open System.Text.Json
 
 type OperationErrors =
     | MalformedJson
@@ -25,7 +25,7 @@ type DirtyValues =
         Email : string option
         FactionID : string option
         FighterID : string option
-        ResourceAttributes : JsonValue option
+        ResourceAttributes : JsonElement option
         ResourceName : string option
         Username : string option
     }
@@ -68,7 +68,7 @@ type RequestBody =
     {
         Body : string
         ContentType : ContentType
-        ParsedJson : JsonValue option
+        ParsedJson : JsonElement option
     }
 
 let defaultRequestBody =
