@@ -1,12 +1,15 @@
 module NechronicleOpenAPIServer.CommonRepositoryTypes
 
-exception RepositoryInputError of string
+exception RepositoryInputException of string
 
-type HttpEtag = HttpEtag of string
+type RepositoryErrors =
+    | FighterDoesNotExist
+    | FactionDoesNotExist
+    | NoMatchesFound
 
-type whereClause =
-    {
-        column : string
-        operator : string
-        value : string
-    }
+// type whereClause =
+//     {
+//         column : string
+//         operator : string
+//         value : string
+//     }

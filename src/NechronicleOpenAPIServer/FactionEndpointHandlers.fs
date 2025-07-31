@@ -5,22 +5,31 @@ open CommonOperations
 open FactionOperations
 open Giraffe
 open Microsoft.AspNetCore.Http
+open Npgsql
 
-let HandleListFighter factionID : HttpHandler =
-    fun (next : HttpFunc) (ctx : HttpContext) ->
-        let queryParameters = ctx.Request.Query
-        let pathParameters = Map.empty.Add("FactionID", factionID)
-        let request =
-            {
-                defaultRequestContext with
-                    Operation = List
-                    Resource = Fighter
-                    PathParameters = Some(pathParameters)
-            }
-        let chain = listFighter
-        match chain(request) with
-        | Ok fighterViewList -> Successful.OK fighterViewList next ctx
-        | _ -> ServerErrors.INTERNAL_ERROR "An unexpected error occurred" next ctx
+// let HandleListFighter factionID : HttpHandler =
+//     fun (next : HttpFunc) (ctx : HttpContext) ->
+//         let pathParameters = Map.empty.Add("FactionID", factionID)
+//         let queryParameters =
+//             match ctx.Request.Query.Count with
+//             | 0 -> None
+//             | _ -> Some(ctx.Request.Query)
+//         use dataSource = NpgsqlDataSource.Create(CommonRepositoryFunctions.createConnectionString)
+//         let request =
+//             {
+//                 defaultRequestContext with
+//                     DataSource = Some(dataSource)
+//                     Operation = List
+//                     Resource = Fighter
+//                     PathParameters = Some(pathParameters)
+//                     QueryParameters = queryParameters
+//             }
+//         let chain = extractFighterFiltersFromQuery
+//                     >==> extractReturnFieldsFromQuery
+//                     >==> listFighter
+//         match chain(request) with
+//         | Ok fighterViewList -> Successful.OK fighterViewList next ctx
+//         | _ -> ServerErrors.INTERNAL_ERROR "An unexpected error occurred" next ctx
 
 let HandleCreateFighter factionID : HttpHandler =
     fun (next : HttpFunc) (ctx : HttpContext) ->
@@ -28,9 +37,11 @@ let HandleCreateFighter factionID : HttpHandler =
             let pathParameters = Map.empty.Add("FactionID", factionID)
             let! body = ctx.ReadBodyFromRequestAsync()
             let requestBody = { defaultRequestBody with Body = body }
+            use dataSource = NpgsqlDataSource.Create(CommonRepositoryFunctions.createConnectionString)
             let request =
                 {
                     defaultRequestContext with
+                        DataSource = Some(dataSource)
                         Operation = Create
                         Resource = Fighter
                         PathParameters = Some(pathParameters)
@@ -42,7 +53,7 @@ let HandleCreateFighter factionID : HttpHandler =
                         >==> makeCreatableFighter
                         >==> createFighter
             match chain(request) with
-            | Ok (fighterView, eTag) -> 
+            | Ok (fighterView, eTag) ->
                 do ctx.SetHttpHeader("ETag", eTag)
                 return! Successful.OK fighterView next ctx
             | Error MalformedJson -> return! RequestErrors.BAD_REQUEST "Request body has malformed JSON" next ctx
@@ -57,14 +68,22 @@ let HandleRetrieveFighterById (factionID, fighterID) : HttpHandler =
                 Map.empty.
                     Add("FactionID", factionID).
                     Add("FighterID", fighterID)
+        let queryParameters =
+            match ctx.Request.Query.Count with
+            | 0 -> None
+            | _ -> Some(ctx.Request.Query)
+        use dataSource = NpgsqlDataSource.Create(CommonRepositoryFunctions.createConnectionString)
         let request =
             {
                 defaultRequestContext with
+                    DataSource = Some(dataSource)
                     Operation = RetrieveByID
                     Resource = Fighter
                     PathParameters = Some(pathParameters)
+                    QueryParameters = queryParameters
             }
-        let chain = extractFighterValuesFromRequest
+        let chain = extractReturnFieldsFromQuery
+                    >==> extractFighterValuesFromRequest
                     >==> retrieveFighterById
         match chain(request) with
         | Ok (fighterView, eTag) ->
@@ -80,15 +99,21 @@ let HandleUpdateFighter (factionID , fighterID) : HttpHandler =
                     Map.empty.
                         Add("FactionID", factionID).
                         Add("FighterID", fighterID)
-            // TODO: get query parameters, such as doReturnFighter and fields
+            let queryParameters =
+                match ctx.Request.Query.Count with
+                | 0 -> None
+                | _ -> Some(ctx.Request.Query)
             let! body = ctx.ReadBodyFromRequestAsync()
             let requestBody = { defaultRequestBody with Body = body }
+            use dataSource = NpgsqlDataSource.Create(CommonRepositoryFunctions.createConnectionString)
             let request =
                 {
                     defaultRequestContext with
+                        DataSource = Some(dataSource)
                         Operation = Update
                         Resource = Fighter
                         PathParameters = Some(pathParameters)
+                        QueryParameters = queryParameters
                         RequestBody = Some(requestBody)
                 }
             let chain = parseRequestBody
@@ -116,9 +141,11 @@ let HandleDeleteFighter (factionID, fighterID) : HttpHandler =
             Map.empty.
                 Add("FactionID", factionID).
                 Add("FighterID", fighterID)
+    use dataSource = NpgsqlDataSource.Create(CommonRepositoryFunctions.createConnectionString)
     let request =
         {
             defaultRequestContext with
+                DataSource = Some(dataSource)
                 Operation = Delete
                 Resource = Fighter
                 PathParameters = Some(pathParameters)
@@ -129,7 +156,6 @@ let HandleDeleteFighter (factionID, fighterID) : HttpHandler =
                 >==> deleteFighter
     match chain(request) with
     | Ok () -> Successful.NO_CONTENT
-    | Error MalformedJson -> RequestErrors.BAD_REQUEST "Request body has malformed JSON"
-    | Error FactionDoesNotExist -> RequestErrors.BAD_REQUEST "No faction with that ID exists"
+    | Error FactionDoesNotExist -> RequestErrors.BAD_REQUEST "Not deleted - no faction with that ID exists"
     | Error FighterDoesNotExist -> RequestErrors.NOT_FOUND "Not deleted - no fighter with that ID exists"
     | _ -> ServerErrors.INTERNAL_ERROR "An unexpected error occurred"

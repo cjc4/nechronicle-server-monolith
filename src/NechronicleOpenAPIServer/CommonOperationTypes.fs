@@ -1,6 +1,9 @@
 module NechronicleOpenAPIServer.CommonOperationTypes
 
+open CommonRepositoryFunctions
 open System.Text.Json
+open Microsoft.AspNetCore.Http
+open Npgsql
 
 type OperationErrors =
     | MalformedJson
@@ -48,13 +51,6 @@ let defaultDirtyValues =
         ResourceAttributes = None
         ResourceName = None
         Username = None
-    }
-
-type FilterField =
-    {
-        Field : string
-        Operator : string
-        Value : string
     }
 
 type Operation =
@@ -105,22 +101,28 @@ let defaultUsableResource =
 
 type RequestContext =
     {
+        DataSource : NpgsqlDataSource option
         Operation : Operation
         Resource : Resource
         PathParameters : Map<string, string> option
-        QueryParameters : Map<string, string> option
+        QueryParameters : IQueryCollection option
         RequestBody : RequestBody option
+        Filters : FilterByField list option
+        ReturnFields : string list option
         DirtyValues : DirtyValues option
         UsableResource : UsableResource option
     }
 
 let defaultRequestContext =
     {
+        DataSource = None
         Operation = List
         Resource = Campaign
         PathParameters = None
         QueryParameters = None
         RequestBody = None
+        Filters = None
+        ReturnFields = None
         DirtyValues = None
         UsableResource = None
     }

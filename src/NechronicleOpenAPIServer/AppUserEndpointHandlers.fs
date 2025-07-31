@@ -1,6 +1,7 @@
 module NechronicleOpenAPIServer.AppUserEndpointHandlers
 
 open CommonOperationTypes
+open CommonOperations
 open AppUserOperations
 open Giraffe
 open Microsoft.AspNetCore.Http

@@ -9,12 +9,11 @@
         <Platforms>AnyCPU;linux-musl-x64;win-x64</Platforms>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="FSharp.Data" Version="6.6.0" />
-        <PackageReference Include="FSharp.Data.Json.Core" Version="6.6.0" />
         <PackageReference Include="FSharp.SystemTextJson" Version="1.4.36" />
         <PackageReference Include="Giraffe" Version="7.0.2" />
         <PackageReference Include="Giraffe.ViewEngine" Version="1.4.*" />
         <PackageReference Include="Npgsql" Version="9.0.3" />
+        <PackageReference Include="Npgsql.FSharp" Version="8.0.0" />
     </ItemGroup>
     <ItemGroup>
         <Compile Include="Utilities.fs" />
@@ -22,6 +21,7 @@
         
         <Compile Include="PublicID.fs" />
         <Compile Include="CommonRepositoryTypes.fs" />
+        <Compile Include="CommonRepositoryFunctions.fs" />
         <Compile Include="AppUserRepository.fs" />
         <Compile Include="FactionRepository.fs" />
         <Compile Include="CommonOperationTypes.fs" />

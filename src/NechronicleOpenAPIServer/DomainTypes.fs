@@ -8,14 +8,14 @@ module DomainTypes =
     // Domain properties.
     type AppUserUUID = AppUserUUID of Guid
     type Attributes = Attributes of JsonElement
-    type CampaignID = CampaignID of string
-    type CampaignEventID = CampaignEventID of string
+    type CampaignID = CampaignID of int
+    type CampaignEventID = CampaignEventID of int
     type CampaignEventType = CampaignEventType of string
-    type ContactInfoID = ContactInfoID of string
-    type EquipmentID = EquipmentID of string
+    type ContactInfoID = ContactInfoID of int
+    type EquipmentID = EquipmentID of int
     type Email = Email of string
-    type FactionID = FactionID of string
-    type FighterID = FighterID of string
+    type FactionID = FactionID of int
+    type FighterID = FighterID of int
 
     // Domain entities.
     type AppUser =
@@ -95,6 +95,12 @@ module DomainTypes =
             Attributes : Attributes
         }
 
+    // type FighterValue =
+    //     | ID of FighterID
+    //     | FactionID of FactionID
+    //     | Name of string
+    //     | Attributes of Attributes
+
     type FighterView =
         {
             ID : FighterID option
@@ -116,4 +122,15 @@ module DomainTypes =
             FactionID : FactionID
             Name : string option
             Attributes : Attributes option
+        }
+
+    // Can I use this to allow the FilterByField records to container Values of many types?
+    // type FilterValue =
+    //     | FighterValue of FighterValue
+
+    type FilterByField =
+        {
+            Field : string
+            Operator : string
+            Value : string
         }

@@ -31,7 +31,7 @@ let endpoints =
             GET [
                 // route "/" HandleListFaction
                 // routef "/%s" HandleRetrieveFactionById
-                routef "/%s/units" HandleListFighter
+                // routef "/%s/units" HandleListFighter
                 routef "/%s/units/%s" HandleRetrieveFighterById
             ]
             PATCH [

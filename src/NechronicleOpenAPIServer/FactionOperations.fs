@@ -11,21 +11,46 @@ let defaultFighterFields =
         "Attributes"
     ]
 
-let listFighter ( request : RequestContext ) =
-    // Assumptions: this function will be called with PathParameters
-    let factionID = FactionID(request.PathParameters.Value.Item("FactionID"))
-    let queryParameters = request.QueryParameters
-    let filterClauses = []
-    let returnFields = defaultFighterFields
-    match FactionRepository.listFighter(factionID, filterClauses, returnFields) with
-    | Ok fighterList -> Ok fighterList
+let extractFighterFiltersFromQuery (request : RequestContext) =
+    let filterByName =
+        match request.QueryParameters with
+        | Some(collection) ->
+            match collection.TryGetValue "name" with
+            | true, value -> Some({ Field = "Name"; Operator = "="; Value = value.ToString() })
+            | _ -> None
+        | None -> None
+    let filters =
+        match filterByName with
+        | Some(filter) -> Some([filter])
+        | None -> None
+    let updatedRequest = { request with Filters = filters }
+    Ok updatedRequest
 
-let extractFighterValuesFromJSONBody ( body : JsonElement ) =
+// let listFighter (request : RequestContext) =
+//     // Assumptions: this function will be called with PathParameters
+//     // TODO: figure out how to handle user-provided FactionIDs that aren't ints
+//     let factionID = request.PathParameters.Value.Item("FactionID")
+//                     |> int
+//                     |> FactionID
+//     let filterByFactionID = { Field = "FactionID"; Operator = "="; Value = factionID.ToString() }
+//     let filters =
+//         match request.Filters with
+//         | Some(filters) -> filterByFactionID :: filters
+//         | None -> [filterByFactionID]
+//     let returnFields =
+//         match request.ReturnFields with
+//         | Some(fields) -> fields
+//         | None -> defaultFighterFields
+//     match FactionRepository.listFighter(returnFields, filters, request.DataSource.Value) with
+//     | Ok fighterList -> Ok fighterList
+
+let extractFighterValuesFromJSONBody (body : JsonElement) =
     // TODO: figure out how to properly test for the existence of these JSON values with System.Text.Json
-    // TODO: figure out how to make this more efficient by iterating over the JSON once instead of searching
+
+    // In the future, figure out how to make this more efficient by iterating over the JSON once instead of searching
     let name = body.GetProperty("name").ToString()
     let attributes = body.GetProperty("attributes")
-    let bodyDirtyValues = 
+    let bodyDirtyValues =
         {
             defaultDirtyValues with
                 ResourceName = Some(name)
@@ -64,11 +89,18 @@ let extractFighterValuesFromRequest (request : RequestContext) =
 
 let retrieveFighterById (request : RequestContext) =
     // Assumptions: this function will be called with DirtyValues with a FighterID
-    let fighterID = FighterID(request.DirtyValues.Value.FighterID.Value)
-    let queryParameters = request.QueryParameters
-    let returnFields = defaultFighterFields
-    match FactionRepository.retrieveFighterByID(fighterID, returnFields) with
+    // TODO: figure out how to handle user-provided FighterIDs that aren't ints
+    let fighterID = request.DirtyValues.Value.FighterID.Value
+                    |> int
+                    |> FighterID
+    let returnFields =
+        match request.ReturnFields with
+        | Some(fields) -> fields
+        | None -> defaultFighterFields
+    let result = FactionRepository.retrieveFighterByID(fighterID, returnFields, request.DataSource.Value)
+    match result with
     | Ok (fighter, eTag) -> Ok (fighter, eTag)
+    | Error CommonRepositoryTypes.FighterDoesNotExist -> Error FighterDoesNotExist
 
 let makeCreatableFighter (request : RequestContext) =
     // Assumptions: this function will be called with DirtyValues
@@ -78,7 +110,7 @@ let makeCreatableFighter (request : RequestContext) =
                      |> Option.map Attributes
     let creatableFighter =
         {
-            FactionID = FactionID values.FactionID.Value
+            FactionID = values.FactionID.Value |> int |> FactionID
             Name = values.ResourceName.Value
             Attributes = attributes
         } : CreatableFighter
@@ -90,8 +122,8 @@ let createFighter (request : RequestContext) =
     // Assumptions: this function will be called with a CreatableFighter
     let creatableFighter = request.UsableResource.Value.CreatableFighter.Value
     let returnFields = defaultFighterFields
-    match FactionRepository.createFighter(creatableFighter) with
-    | Ok (fighterID, eTag) -> FactionRepository.retrieveFighterByID(fighterID, returnFields)
+    match FactionRepository.createFighter(creatableFighter, request.DataSource.Value) with
+    | Ok (fighterID, eTag) -> FactionRepository.retrieveFighterByID(fighterID, returnFields, request.DataSource.Value)
 
 let makeUpdatableFighter (request: RequestContext) =
     // Assumptions: this function will be called with DirtyValues
@@ -101,8 +133,8 @@ let makeUpdatableFighter (request: RequestContext) =
                      |> Option.map Attributes
     let updatableFighter =
         {
-            ID = FighterID values.FighterID.Value
-            FactionID = FactionID values.FactionID.Value
+            ID = values.FighterID.Value |> int |> FighterID
+            FactionID = values.FactionID.Value |> int |> FactionID
             Name = values.ResourceName
             Attributes = attributes
         } : UpdatableFighter
@@ -115,11 +147,11 @@ let updateFighter (request : RequestContext) =
     let updatableFighter = request.UsableResource.Value.UpdatableFighter.Value
     // TODO: use the query parameters to see if client wants the updated Fighter returned
     let queryParameters = request.QueryParameters
-    match FactionRepository.updateFighter(updatableFighter) with
+    match FactionRepository.updateFighter(updatableFighter, request.DataSource.Value) with
     | Ok eTag -> Ok eTag
 
 let deleteFighter (request : RequestContext) =
     // Assumptions: this function will be called with DirtyValues with a FighterID
-    let fighterID = FighterID(request.DirtyValues.Value.FighterID.Value)
-    match FactionRepository.deleteFighter(fighterID) with
+    let fighterID = request.DirtyValues.Value.FighterID.Value |> int |> FighterID
+    match FactionRepository.deleteFighter(fighterID, request.DataSource.Value) with
     | Ok () -> Ok ()
